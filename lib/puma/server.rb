@@ -241,6 +241,7 @@ module Puma
 
       @thread_pool.out_of_band_hook = @options[:out_of_band]
       @thread_pool.clean_thread_locals = @options[:clean_thread_locals]
+      @thread_pool.before_thread_exit_hook = @options[:before_thread_exit]
 
       if @queue_requests
         @reactor = Reactor.new(@io_selector_backend, &method(:reactor_wakeup))

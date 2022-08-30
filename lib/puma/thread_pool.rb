@@ -70,6 +70,7 @@ module Puma
     attr_reader :spawned, :trim_requested, :waiting
     attr_accessor :clean_thread_locals
     attr_accessor :out_of_band_hook # @version 5.0.0
+    attr_accessor :before_thread_exit_hook
 
     def self.clean_thread_locals
       Thread.current.keys.each do |key| # rubocop: disable Style/HashEachMethods
@@ -121,6 +122,7 @@ module Puma
                 @spawned -= 1
                 @workers.delete th
                 not_full.signal
+                trigger_before_thread_exit_hook
                 Thread.exit
               end
 
@@ -157,6 +159,17 @@ module Puma
     end
 
     private :spawn_thread
+
+    def trigger_before_thread_exit_hook
+      return unless before_thread_exit_hook && before_thread_exit_hook.any?
+
+      before_thread_exit_hook.each(&:call)
+      nil
+    rescue Exception => e
+      STDERR.puts "Exception calling before_thread_exit_hook: #{e.message} (#{e.class})"
+    end
+
+    private :trigger_before_thread_exit_hook
 
     # @version 5.0.0
     def trigger_out_of_band_hook
